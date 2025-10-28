@@ -57,7 +57,7 @@ if uploaded_file:
         plot_tree(model, feature_names=feature_cols, class_names=class_labels, filled=True, ax=ax)
 
 
-  # --- K-Means Clustering ---
+ # --- K-Means Clustering ---
 st.write("## K-Means Clustering (Generational Gap Analysis)")
 num_clusters = st.slider("Select number of clusters (e.g., 3 for G1, G2, G3)", 2, 6, 3)
 cluster_features = st.multiselect("Select features for clustering", df.columns)
@@ -66,7 +66,20 @@ if st.button("Run Clustering"):
     if len(cluster_features) == 0:
         st.warning("⚠️ Please select at least ONE feature before running clustering.")
     else:
-        X = df[cluster_features]
+        X = df[cluster_features].copy()
+
+        # Convert object/text columns to numeric (Label Encoding)
+        for col in X.columns:
+            if X[col].dtype == 'object':
+                X[col] = LabelEncoder().fit_transform(X[col].astype(str))
+
+        # Replace NaN values with column mean
+        X = X.fillna(X.mean())
+
+        # Convert to float for KMeans
+        X = X.astype(float)
+
+        # Run clustering
         kmeans = KMeans(n_clusters=num_clusters, random_state=42)
         df['Cluster'] = kmeans.fit_predict(X)
         st.success("✅ Clustering completed!")
@@ -74,13 +87,12 @@ if st.button("Run Clustering"):
         st.write("### Cluster Distribution")
         st.bar_chart(df['Cluster'].value_counts())
 
-        # ---- Visualization Logic ----
+        # Visualization Logic
         if len(cluster_features) == 1:
             st.info("📌 Only one feature selected → showing cluster means instead of scatterplot.")
             st.write(df.groupby('Cluster')[cluster_features[0]].mean())
 
         elif len(cluster_features) >= 2:
-            # User chooses axes
             x_axis = st.selectbox("Select X-axis column", cluster_features)
             y_axis = st.selectbox("Select Y-axis column", cluster_features)
 
@@ -88,6 +100,7 @@ if st.button("Run Clustering"):
             sns.scatterplot(data=df, x=x_axis, y=y_axis, hue='Cluster', palette='tab10', s=80, ax=ax)
             plt.title("Generational Clusters Showing Knowledge Gaps")
             st.pyplot(fig)
+
 
 
     # --- Recognition Gap Table ---
