@@ -143,43 +143,46 @@ if not total_damage_per_year.empty:
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
-series = df[water_col].resample('M').mean().fillna(0) # Fill missing months with 0
+series = df[water_col].resample('M').mean().fillna(0)  # Fill missing months with 0
 if len(series) >= 12:
-    split = int(len(series)*0.😎
-    train = series.iloc[:split]; test = series.iloc[split:]
-    best_aic = 1e18; best_res=None; best_order=None
-    for p in range(0,2):
-        for d in range(0,2):
-            for q in range(0,2):
-                for P in range(0,2):
-                    for D in range(0,2):
-                        for Q in range(0,2):
+    split = int(len(series) * 0.8)  # <-- fixed line (split 80% train, 20% test)
+    train = series.iloc[:split]
+    test = series.iloc[split:]
+    best_aic = 1e18
+    best_res = None
+    best_order = None
+    for p in range(0, 2):
+        for d in range(0, 2):
+            for q in range(0, 2):
+                for P in range(0, 2):
+                    for D in range(0, 2):
+                        for Q in range(0, 2):
                             try:
-                                mod = SARIMAX(train, order=(p,d,q), seasonal_order=(P,D,Q,12),
+                                mod = SARIMAX(train, order=(p, d, q), seasonal_order=(P, D, Q, 12),
                                               enforce_stationarity=False, enforce_invertibility=False)
                                 res = mod.fit(disp=False)
                                 if res.aic < best_aic:
-                                    best_aic = res.aic; best_res = res; best_order=((p,d,q),(P,D,Q,12))
-                            except: pass
+                                    best_aic = res.aic
+                                    best_res = res
+                                    best_order = ((p, d, q), (P, D, Q, 12))
+                            except:
+                                pass
     if best_res is not None:
         pred = best_res.get_prediction(start=test.index[0], end=test.index[-1], dynamic=False)
         forecast = pred.predicted_mean
-        mae = mean_absolute_error(test, forecast); mse = mean_squared_error(test, forecast)
+        mae = mean_absolute_error(test, forecast)
+        mse = mean_squared_error(test, forecast)
         print("SARIMA best order:", best_order, "AIC:", best_aic)
         print("MAE:", mae, "MSE:", mse)
-        plt.figure(figsize=(10,4))
-        plt.plot(train.index, train, label='Train'); plt.plot(test.index, test, label='Test')
-        plt.plot(forecast.index, forecast, label='SARIMA Forecast'); plt.legend()
-        plt.title("SARIMA: Actual vs Forecast"); plt.tight_layout()
-        plt.savefig(os.path.join(OUTDIR,"sarima_actual_vs_forecast.png")); plt.show()
+        plt.figure(figsize=(10, 4))
+        plt.plot(train.index, train, label='Train')
+        plt.plot(test.index, test, label='Test')
+        plt.plot(forecast.index, forecast, label='SARIMA Forecast')
+        plt.legend()
+        plt.title("SARIMA: Actual vs Forecast")
+        plt.tight_layout()
+        plt.savefig(os.path.join(OUTDIR, "sarima_actual_vs_forecast.png"))
+        plt.show()
 else:
     print("Not enough monthly data for SARIMA (need >=12 aggregated months).")
 
-summary_df = pd.DataFrame({
-    "year": floods_per_year.index,
-    "floods_per_year": floods_per_year.values,
-    "avg_water_per_year": avg_water_per_year.values
-})
-summary_df.to_csv(os.path.join(OUTDIR,"summary_per_year.csv"), index=False)
-print("Outputs saved to:", OUTDIR)
-print("Files:", os.listdir(OUTDIR))
