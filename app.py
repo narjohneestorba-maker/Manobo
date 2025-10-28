@@ -53,8 +53,9 @@ if uploaded_file:
 
         # Plot the Decision Tree
         fig, ax = plt.subplots(figsize=(12,6))
-        plot_tree(model, feature_names=feature_cols, class_names=['Not Recognized','Recognized'], filled=True, ax=ax)
-        st.pyplot(fig)
+        class_labels = [str(c) for c in sorted(y.unique())]  # auto detect class names
+plot_tree(model, feature_names=feature_cols, class_names=class_labels, filled=True, ax=ax)
+
 
     # --- K-Means Clustering ---
     st.write("## K-Means Clustering (Generational Gap Analysis)")
