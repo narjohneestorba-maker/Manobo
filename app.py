@@ -1,4 +1,4 @@
-lood-pattern analysis (Google Colab ready)
+# flood-pattern analysis (Google Colab ready)
 # Make sure to upload your dataset first, e.g., 'FLOOD DATA.csv'
 
 import pandas as pd, numpy as np, matplotlib.pyplot as plt, os, warnings
